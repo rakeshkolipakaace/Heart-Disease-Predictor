@@ -18,19 +18,25 @@ except ImportError as e:
     st.error(f"Missing ML dependencies: {e}")
     ML_AVAILABLE = False
 
+# Fallback for deployment issues
+try:
+    import spacy
+    SPACY_AVAILABLE = True
+except ImportError:
+    SPACY_AVAILABLE = False
+
 # ===============================
 # 0. NLP SETUP
 # ===============================
 @st.cache_resource
 def load_spacy_model():
+    if not SPACY_AVAILABLE:
+        return None
     try:
-        return spacy.load("en_core_web_md")
+        return spacy.load("en_core_web_sm")  # Use smaller model
     except OSError:
-        st.error("Downloading spaCy model...")
-        import subprocess
-        import sys
-        subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_md"])
-        return spacy.load("en_core_web_md")
+        # Silently fallback without breaking the app
+        return None
 
 nlp_model = load_spacy_model()
 
@@ -190,39 +196,97 @@ st.pyplot(fig)
 st.subheader("NLP-Extracted Clinical Entities")
 st.write(f"**Clinical Notes:** {clinical_notes}")
 
-doc = nlp_model(clinical_notes)
-
-# Enhanced medical entity detection with keyword matching
-medical_keywords = {
-    "chest tightness": "SYMPTOM",
-    "chest pain": "SYMPTOM", 
-    "shortness of breath": "SYMPTOM",
-    "dizziness": "SYMPTOM",
-    "sweating": "SYMPTOM",
-    "heart disease": "CONDITION",
-    "heart attack": "CONDITION",
-    "coronary artery disease": "CONDITION",
-    "high blood pressure": "CONDITION",
-    "hypertension": "CONDITION",
-    "diabetes": "CONDITION",
-    "exertion": "ACTIVITY",
-    "family history": "RISK_FACTOR",
-    "radiating": "SYMPTOM_DESCRIPTION"
-}
-
-found_entities = False
-
-# Check spaCy entities first
-if doc.ents:
-    for ent in doc.ents:
-        st.write(f"- **{ent.text}** → {ent.label_}")
-        found_entities = True
-
-# Add keyword-based medical entity detection
-for keyword, entity_type in medical_keywords.items():
-    if keyword.lower() in clinical_notes.lower():
-        st.write(f"- **{keyword}** → {entity_type}")
-        found_entities = True
-
-if not found_entities:
-    st.write("No medical entities detected. Try terms like: chest pain, shortness of breath, heart disease")
+if nlp_model is not None:
+    try:
+        doc = nlp_model(clinical_notes)
+        
+        # Enhanced medical entity detection with keyword matching
+        medical_keywords = {
+            "chest tightness": "SYMPTOM",
+            "chest pain": "SYMPTOM", 
+            "shortness of breath": "SYMPTOM",
+            "dizziness": "SYMPTOM",
+            "sweating": "SYMPTOM",
+            "heart disease": "CONDITION",
+            "heart attack": "CONDITION",
+            "coronary artery disease": "CONDITION",
+            "high blood pressure": "CONDITION",
+            "hypertension": "CONDITION",
+            "diabetes": "CONDITION",
+            "exertion": "ACTIVITY",
+            "family history": "RISK_FACTOR",
+            "radiating": "SYMPTOM_DESCRIPTION"
+        }
+        
+        found_entities = False
+        
+        # Check spaCy entities first
+        if doc.ents:
+            for ent in doc.ents:
+                st.write(f"- **{ent.text}** → {ent.label_}")
+                found_entities = True
+        
+        # Add keyword-based medical entity detection
+        for keyword, entity_type in medical_keywords.items():
+            if keyword.lower() in clinical_notes.lower():
+                st.write(f"- **{keyword}** → {entity_type}")
+                found_entities = True
+        
+        if not found_entities:
+            st.write("No medical entities detected. Try terms like: chest pain, shortness of breath, heart disease")
+    except Exception as e:
+        st.warning(f"NLP processing unavailable: {e}")
+        # Fallback to keyword-only detection
+        medical_keywords = {
+            "chest tightness": "SYMPTOM",
+            "chest pain": "SYMPTOM", 
+            "shortness of breath": "SYMPTOM",
+            "dizziness": "SYMPTOM",
+            "sweating": "SYMPTOM",
+            "heart disease": "CONDITION",
+            "heart attack": "CONDITION",
+            "coronary artery disease": "CONDITION",
+            "high blood pressure": "CONDITION",
+            "hypertension": "CONDITION",
+            "diabetes": "CONDITION",
+            "exertion": "ACTIVITY",
+            "family history": "RISK_FACTOR",
+            "radiating": "SYMPTOM_DESCRIPTION"
+        }
+        
+        found_entities = False
+        for keyword, entity_type in medical_keywords.items():
+            if keyword.lower() in clinical_notes.lower():
+                st.write(f"- **{keyword}** → {entity_type}")
+                found_entities = True
+        
+        if not found_entities:
+            st.write("No medical entities detected. Try terms like: chest pain, shortness of breath, heart disease")
+else:
+    st.warning("NLP model not available - using keyword detection only")
+    # Fallback to keyword-only detection
+    medical_keywords = {
+        "chest tightness": "SYMPTOM",
+        "chest pain": "SYMPTOM", 
+        "shortness of breath": "SYMPTOM",
+        "dizziness": "SYMPTOM",
+        "sweating": "SYMPTOM",
+        "heart disease": "CONDITION",
+        "heart attack": "CONDITION",
+        "coronary artery disease": "CONDITION",
+        "high blood pressure": "CONDITION",
+        "hypertension": "CONDITION",
+        "diabetes": "CONDITION",
+        "exertion": "ACTIVITY",
+        "family history": "RISK_FACTOR",
+        "radiating": "SYMPTOM_DESCRIPTION"
+    }
+    
+    found_entities = False
+    for keyword, entity_type in medical_keywords.items():
+        if keyword.lower() in clinical_notes.lower():
+            st.write(f"- **{keyword}** → {entity_type}")
+            found_entities = True
+    
+    if not found_entities:
+        st.write("No medical entities detected. Try terms like: chest pain, shortness of breath, heart disease")
