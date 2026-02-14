@@ -26,26 +26,18 @@ except ImportError:
     SPACY_AVAILABLE = False
 
 # ===============================
-# 0. NLP SETUP
+# 0. NLP SETUP (FINAL – CORRECT)
 # ===============================
 @st.cache_resource
 def load_spacy_model():
-    if not SPACY_AVAILABLE:
-        return None
     try:
-        return spacy.load("en_core_web_sm")  # Use smaller model
-    except OSError:
-        # Try to download the model for Streamlit Cloud
-        try:
-            import subprocess
-            import sys
-            subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_sm", "--quiet"])
-            return spacy.load("en_core_web_sm")
-        except:
-            # Silently fallback without breaking the app
-            return None
+        import spacy
+        return spacy.load("en_core_web_sm")
+    except Exception:
+        return None
 
 nlp_model = load_spacy_model()
+
 
 # ===============================
 # 1. DATA & MODEL SETUP
