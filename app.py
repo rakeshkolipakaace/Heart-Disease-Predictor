@@ -161,7 +161,7 @@ st.metric("Diagnosis", risk_level, f"{prob[0][1]*100:.1f}% Probability")
 # ===============================
 st.subheader("Why this prediction?")
 
-shap_values = explainer.shap_values(input_scaled)
+shap_values = explainer.shap_values(input_scaled, check_additivity=False)
 
 # Binary classifier → take positive class
 if isinstance(shap_values, list):
@@ -189,103 +189,13 @@ ax.set_title("Feature Contribution to Prediction")
 plt.tight_layout()
 st.pyplot(fig)
 
-# ===============================
-# 5. NLP CLINICAL ENTITY EXTRACTION
-# ===============================
+# --- 4. NLP-Extracted Entities ---
 st.subheader("NLP-Extracted Clinical Entities")
-st.write(f"**Clinical Notes:** {clinical_notes}")
+st.write(f"**Clinical Notes Input:** {clinical_notes}")
 
-if nlp_model is not None:
-    try:
-        doc = nlp_model(clinical_notes)
-        
-        # Enhanced medical entity detection with keyword matching
-        medical_keywords = {
-            "chest tightness": "SYMPTOM",
-            "chest pain": "SYMPTOM", 
-            "shortness of breath": "SYMPTOM",
-            "dizziness": "SYMPTOM",
-            "sweating": "SYMPTOM",
-            "heart disease": "CONDITION",
-            "heart attack": "CONDITION",
-            "coronary artery disease": "CONDITION",
-            "high blood pressure": "CONDITION",
-            "hypertension": "CONDITION",
-            "diabetes": "CONDITION",
-            "exertion": "ACTIVITY",
-            "family history": "RISK_FACTOR",
-            "radiating": "SYMPTOM_DESCRIPTION"
-        }
-        
-        found_entities = False
-        
-        # Check spaCy entities first
-        if doc.ents:
-            for ent in doc.ents:
-                st.write(f"- **{ent.text}** → {ent.label_}")
-                found_entities = True
-        
-        # Add keyword-based medical entity detection
-        for keyword, entity_type in medical_keywords.items():
-            if keyword.lower() in clinical_notes.lower():
-                st.write(f"- **{keyword}** → {entity_type}")
-                found_entities = True
-        
-        if not found_entities:
-            st.write("No medical entities detected. Try terms like: chest pain, shortness of breath, heart disease")
-    except Exception as e:
-        st.warning(f"NLP processing unavailable: {e}")
-        # Fallback to keyword-only detection
-        medical_keywords = {
-            "chest tightness": "SYMPTOM",
-            "chest pain": "SYMPTOM", 
-            "shortness of breath": "SYMPTOM",
-            "dizziness": "SYMPTOM",
-            "sweating": "SYMPTOM",
-            "heart disease": "CONDITION",
-            "heart attack": "CONDITION",
-            "coronary artery disease": "CONDITION",
-            "high blood pressure": "CONDITION",
-            "hypertension": "CONDITION",
-            "diabetes": "CONDITION",
-            "exertion": "ACTIVITY",
-            "family history": "RISK_FACTOR",
-            "radiating": "SYMPTOM_DESCRIPTION"
-        }
-        
-        found_entities = False
-        for keyword, entity_type in medical_keywords.items():
-            if keyword.lower() in clinical_notes.lower():
-                st.write(f"- **{keyword}** → {entity_type}")
-                found_entities = True
-        
-        if not found_entities:
-            st.write("No medical entities detected. Try terms like: chest pain, shortness of breath, heart disease")
+doc = nlp_model(clinical_notes)
+if doc.ents:
+    for ent in doc.ents:
+        st.write(f"- Entity: {ent.text}, Type: {ent.label_}")
 else:
-    st.warning("NLP model not available - using keyword detection only")
-    # Fallback to keyword-only detection
-    medical_keywords = {
-        "chest tightness": "SYMPTOM",
-        "chest pain": "SYMPTOM", 
-        "shortness of breath": "SYMPTOM",
-        "dizziness": "SYMPTOM",
-        "sweating": "SYMPTOM",
-        "heart disease": "CONDITION",
-        "heart attack": "CONDITION",
-        "coronary artery disease": "CONDITION",
-        "high blood pressure": "CONDITION",
-        "hypertension": "CONDITION",
-        "diabetes": "CONDITION",
-        "exertion": "ACTIVITY",
-        "family history": "RISK_FACTOR",
-        "radiating": "SYMPTOM_DESCRIPTION"
-    }
-    
-    found_entities = False
-    for keyword, entity_type in medical_keywords.items():
-        if keyword.lower() in clinical_notes.lower():
-            st.write(f"- **{keyword}** → {entity_type}")
-            found_entities = True
-    
-    if not found_entities:
-        st.write("No medical entities detected. Try terms like: chest pain, shortness of breath, heart disease")
+    st.write("No medical entities found in the clinical notes.")
