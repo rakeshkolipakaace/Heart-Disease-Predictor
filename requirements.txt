@@ -1,0 +1,8 @@
+streamlit>=1.45.0
+pandas>=2.0.0
+numpy>=2.0.0
+scikit-learn>=1.7.0
+matplotlib>=3.7.0
+shap>=0.50.0
+spacy>=3.8.0
+pyngrok>=7.0.0
