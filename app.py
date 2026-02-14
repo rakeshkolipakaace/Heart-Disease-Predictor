@@ -26,8 +26,11 @@ def load_spacy_model():
     try:
         return spacy.load("en_core_web_md")
     except OSError:
-        st.error("spaCy model not found. Run: python -m spacy download en_core_web_md")
-        st.stop()
+        st.error("Downloading spaCy model...")
+        import subprocess
+        import sys
+        subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_md"])
+        return spacy.load("en_core_web_md")
 
 nlp_model = load_spacy_model()
 
