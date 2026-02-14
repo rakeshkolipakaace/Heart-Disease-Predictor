@@ -193,9 +193,12 @@ st.pyplot(fig)
 st.subheader("NLP-Extracted Clinical Entities")
 st.write(f"**Clinical Notes Input:** {clinical_notes}")
 
-doc = nlp_model(clinical_notes)
-if doc.ents:
-    for ent in doc.ents:
-        st.write(f"- Entity: {ent.text}, Type: {ent.label_}")
+if nlp_model is not None:
+    doc = nlp_model(clinical_notes)
+    if doc.ents:
+        for ent in doc.ents:
+            st.write(f"- Entity: {ent.text}, Type: {ent.label_}")
+    else:
+        st.write("No medical entities found in the clinical notes.")
 else:
-    st.write("No medical entities found in the clinical notes.")
+    st.warning("spaCy model not available. Please install with: python -m spacy download en_core_web_sm")
