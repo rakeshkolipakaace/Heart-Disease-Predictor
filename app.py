@@ -35,8 +35,15 @@ def load_spacy_model():
     try:
         return spacy.load("en_core_web_sm")  # Use smaller model
     except OSError:
-        # Silently fallback without breaking the app
-        return None
+        # Try to download the model for Streamlit Cloud
+        try:
+            import subprocess
+            import sys
+            subprocess.check_call([sys.executable, "-m", "spacy", "download", "en_core_web_sm", "--quiet"])
+            return spacy.load("en_core_web_sm")
+        except:
+            # Silently fallback without breaking the app
+            return None
 
 nlp_model = load_spacy_model()
 
